@@ -1,0 +1,154 @@
+[
+  {
+    "file": "src/common/timing.c",
+    "arguments": [
+      "/usr/bin/clang",
+      "-std=c23",
+      "-D_POSIX_C_SOURCE=200809L",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-fno-tree-vectorize",
+      "-Isrc/common",
+      "-Isrc/kernels",
+      "src/common/timing.c",
+      "-o",
+      "build/bin/harness_scalar"
+    ],
+    "directory": "/home/mystical_apple/Documents/RPI/courses/ecse-4320/projects/project1-simd",
+    "output": "build/bin/harness_scalar"
+  },
+  {
+    "file": "src/common/alloc.c",
+    "arguments": [
+      "/usr/bin/clang",
+      "-std=c23",
+      "-D_POSIX_C_SOURCE=200809L",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-fno-tree-vectorize",
+      "-Isrc/common",
+      "-Isrc/kernels",
+      "src/common/alloc.c",
+      "-o",
+      "build/bin/harness_scalar"
+    ],
+    "directory": "/home/mystical_apple/Documents/RPI/courses/ecse-4320/projects/project1-simd",
+    "output": "build/bin/harness_scalar"
+  },
+  {
+    "file": "src/common/datagen.c",
+    "arguments": [
+      "/usr/bin/clang",
+      "-std=c23",
+      "-D_POSIX_C_SOURCE=200809L",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-fno-tree-vectorize",
+      "-Isrc/common",
+      "-Isrc/kernels",
+      "src/common/datagen.c",
+      "-o",
+      "build/bin/harness_scalar"
+    ],
+    "directory": "/home/mystical_apple/Documents/RPI/courses/ecse-4320/projects/project1-simd",
+    "output": "build/bin/harness_scalar"
+  },
+  {
+    "file": "src/kernels/saxpy.c",
+    "arguments": [
+      "/usr/bin/clang",
+      "-std=c23",
+      "-D_POSIX_C_SOURCE=200809L",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-fno-tree-vectorize",
+      "-Isrc/common",
+      "-Isrc/kernels",
+      "src/kernels/saxpy.c",
+      "-o",
+      "build/bin/harness_scalar"
+    ],
+    "directory": "/home/mystical_apple/Documents/RPI/courses/ecse-4320/projects/project1-simd",
+    "output": "build/bin/harness_scalar"
+  },
+  {
+    "file": "src/kernels/dotprod.c",
+    "arguments": [
+      "/usr/bin/clang",
+      "-std=c23",
+      "-D_POSIX_C_SOURCE=200809L",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-fno-tree-vectorize",
+      "-Isrc/common",
+      "-Isrc/kernels",
+      "src/kernels/dotprod.c",
+      "-o",
+      "build/bin/harness_scalar"
+    ],
+    "directory": "/home/mystical_apple/Documents/RPI/courses/ecse-4320/projects/project1-simd",
+    "output": "build/bin/harness_scalar"
+  },
+  {
+    "file": "src/kernels/elemmul.c",
+    "arguments": [
+      "/usr/bin/clang",
+      "-std=c23",
+      "-D_POSIX_C_SOURCE=200809L",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-fno-tree-vectorize",
+      "-Isrc/common",
+      "-Isrc/kernels",
+      "src/kernels/elemmul.c",
+      "-o",
+      "build/bin/harness_scalar"
+    ],
+    "directory": "/home/mystical_apple/Documents/RPI/courses/ecse-4320/projects/project1-simd",
+    "output": "build/bin/harness_scalar"
+  },
+  {
+    "file": "src/kernels/stencil3.c",
+    "arguments": [
+      "/usr/bin/clang",
+      "-std=c23",
+      "-D_POSIX_C_SOURCE=200809L",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-fno-tree-vectorize",
+      "-Isrc/common",
+      "-Isrc/kernels",
+      "src/kernels/stencil3.c",
+      "-o",
+      "build/bin/harness_scalar"
+    ],
+    "directory": "/home/mystical_apple/Documents/RPI/courses/ecse-4320/projects/project1-simd",
+    "output": "build/bin/harness_scalar"
+  },
+  {
+    "file": "src/harness/main.c",
+    "arguments": [
+      "/usr/bin/clang",
+      "-std=c23",
+      "-D_POSIX_C_SOURCE=200809L",
+      "-Wall",
+      "-Wextra",
+      "-O2",
+      "-fno-tree-vectorize",
+      "-Isrc/common",
+      "-Isrc/kernels",
+      "src/harness/main.c",
+      "-o",
+      "build/bin/harness_scalar"
+    ],
+    "directory": "/home/mystical_apple/Documents/RPI/courses/ecse-4320/projects/project1-simd",
+    "output": "build/bin/harness_scalar"
+  }
+]
