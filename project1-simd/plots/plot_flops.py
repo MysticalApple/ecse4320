@@ -66,24 +66,40 @@ for kernel, kernel_df in df.groupby("kernel"):
     for variant, variant_df in kernel_df.groupby("variant"):
         color = variant_colors[variant]
 
-        # Average repeated measurements at each problem size.
+        # Median and interquartile range of repeated measurements.
         grouped = (
-            variant_df.groupby("n", as_index=False)["gflops"]
-            .mean()
+            variant_df.groupby("n")["gflops"]
+            .agg(
+                median="median",
+                q25=lambda s: s.quantile(0.25),
+                q75=lambda s: s.quantile(0.75),
+            )
+            .reset_index()
             .sort_values("n")
         )
 
         x = grouped["n"].to_numpy(dtype=float)
-        y = grouped["gflops"].to_numpy(dtype=float)
+        y = grouped["median"].to_numpy(dtype=float)
 
-        ax.scatter(
+        # Asymmetric error bars: distance from median to each quartile.
+        yerr = np.vstack([
+            y - grouped["q25"].to_numpy(),
+            grouped["q75"].to_numpy() - y,
+        ])
+
+        ax.errorbar(
             x, y,
+            yerr=yerr,
             color=color,
             label=f"{variant}",
             alpha=0.85,
+            marker="o",
+            linestyle="-",
+            capsize=3,
+            markersize=5,
         )
 
-    ax.set_xscale("log")
+    ax.set_xscale("log", base=2)
     ax.set_yscale("linear")
     ax.set_xlabel("Working set size")
     ax.set_ylabel("GFLOPS")
@@ -102,5 +118,5 @@ for kernel, kernel_df in df.groupby("kernel"):
     fig.savefig(output_file, dpi=200)
     plt.close(fig)
 
-    print(f"Saved {output_file}")
+    print(f"saved {output_file}")
 
