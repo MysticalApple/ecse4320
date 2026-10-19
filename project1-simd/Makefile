@@ -29,9 +29,9 @@ LDLIBS = -lm
 
 # Override any of these from the command line if needed, e.g.:
 #   make AUTOVEC_WIDEST_FLAGS="-O3 -march=native -mprefer-vector-width=512"
-SCALAR_FLAGS          ?= -O2 -fno-tree-vectorize
-AUTOVEC_DEFAULT_FLAGS ?= -O3
-AUTOVEC_WIDEST_FLAGS  ?= -O3 -march=native
+SCALAR_FLAGS          ?= -D'VARIANT="scalar"' -O2 -fno-tree-vectorize
+AUTOVEC_DEFAULT_FLAGS ?= -D'VARIANT="autovec_default"' -O3
+AUTOVEC_WIDEST_FLAGS  ?= -D'VARIANT="autovec_widest"' -O3 -march=native
 
 REF_FLAGS = -O0 -fno-tree-vectorize -g
 

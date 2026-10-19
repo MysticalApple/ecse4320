@@ -377,7 +377,11 @@ int main(int argc, char **argv) {
     int warmup = 3;
     int inner = 16;
     uint64_t seed = 12345;
+    #ifndef VARIANT
     const char *variant = "unknown";
+    #else
+    const char *variant = VARIANT;
+    #endif
 
     static struct option long_opts[] = {
         {"kernel", required_argument, 0, 'k'},
