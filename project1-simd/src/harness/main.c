@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <unistd.h>
 
 #include "alloc.h"
 #include "datagen.h"
@@ -494,11 +495,14 @@ int main(int argc, char **argv) {
      * validated here. */
     int checksum_ok = run_correctness_check(kernel, dtype, n, x, y, idx);
 
-    for (int i = 0; i < warmup; i++) {
-        run_kernel_once(kernel, dtype, n, x, y, z, idx);
-    }
 
     for (int rep = 0; rep < reps; rep++) {
+        sleep(1);
+
+        for (int i = 0; i < warmup; i++) {
+            run_kernel_once(kernel, dtype, n, x, y, z, idx);
+        }
+
         double t0 = now_seconds();
         for (int j = 0; j < inner; j++) {
             run_kernel_once(kernel, dtype, n, x, y, z, idx);
