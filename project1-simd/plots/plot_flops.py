@@ -2,6 +2,7 @@
 
 import argparse
 from pathlib import Path
+import sys
 
 import numpy as np
 import pandas as pd
@@ -25,7 +26,7 @@ COLUMNS = [
 
 
 # Read CSV. The input is expected to have no header row.
-df = pd.read_csv("data.csv", header=None, names=COLUMNS)
+df = pd.read_csv(sys.argv[1], header=None, names=COLUMNS)
 
 # Ensure numeric columns are parsed correctly.
 numeric_columns = [
@@ -101,7 +102,7 @@ for kernel, kernel_df in df.groupby("kernel"):
 
     ax.set_xscale("log", base=2)
     ax.set_yscale("linear")
-    ax.set_xlabel("Working set size")
+    ax.set_xlabel("Working set size (n)")
     ax.set_ylabel("GFLOPS")
     ax.set_title(f"Kernel: {kernel}")
     ax.grid(True, which="both", linestyle=":", alpha=0.4)
