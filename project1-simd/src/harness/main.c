@@ -24,6 +24,7 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
+#include <time.h>
 #include <unistd.h>
 
 #include "alloc.h"
@@ -378,11 +379,11 @@ int main(int argc, char **argv) {
     int warmup = 3;
     int inner = 16;
     uint64_t seed = 12345;
-    #ifndef VARIANT
+#ifndef VARIANT
     const char *variant = "unknown";
-    #else
+#else
     const char *variant = VARIANT;
-    #endif
+#endif
 
     static struct option long_opts[] = {
         {"kernel", required_argument, 0, 'k'},
@@ -495,9 +496,9 @@ int main(int argc, char **argv) {
      * validated here. */
     int checksum_ok = run_correctness_check(kernel, dtype, n, x, y, idx);
 
-
+    struct timespec ts = {.tv_sec = 0, .tv_nsec = 10000000};
     for (int rep = 0; rep < reps; rep++) {
-        sleep(1);
+        nanosleep(&ts, NULL);
 
         for (int i = 0; i < warmup; i++) {
             run_kernel_once(kernel, dtype, n, x, y, z, idx);
