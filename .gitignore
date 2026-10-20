@@ -1,3 +1,4 @@
 **/build/
 **/plots/*.png
 **/*.csv
+**/datagen_cache/
