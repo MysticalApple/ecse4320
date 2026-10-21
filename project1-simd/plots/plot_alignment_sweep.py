@@ -119,12 +119,9 @@ for kernel, kernel_df in df.groupby("kernel"):
         c if c.isalnum() or c in "-_." else "_"
         for c in str(kernel)
     )
-    output_file = f"./alignment_sweep_{safe_kernel}.png"
+    output_file = f"./alignment_{safe_kernel}.png"
 
     fig.savefig(output_file, dpi=200)
     plt.close(fig)
 
     print(f"saved {output_file}")
-
-
-

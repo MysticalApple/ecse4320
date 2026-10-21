@@ -17,3 +17,21 @@ void stencil3_f64(size_t n, double a, double b, double c, const double *restrict
         y[i] = a * x[i - 1] + b * x[i] + c * x[i + 1];
     }
 }
+
+/* Strided: used when n > stride > 1 */
+void stencil3_f32_stride(size_t n, float a, float b, float c, const float *restrict x, float *restrict y, size_t s) {
+    for (size_t start = 0; start < s && start < n; start++) {
+        for (size_t i = start +  1; i + 1 < n; i += s) {
+            y[i] = a * x[i - 1] + b * x[i] + c * x[i + 1];
+        }
+    }
+}
+
+void stencil3_f64_stride(size_t n, double a, double b, double c, const double *restrict x, double *restrict y, size_t s) {
+    for (size_t start = 0; start < s && start < n; start++) {
+        for (size_t i = 1; i + 1 < n; i += s) {
+            y[i] = a * x[i - 1] + b * x[i] + c * x[i + 1];
+        }
+    }
+}
+

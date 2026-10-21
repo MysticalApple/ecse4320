@@ -36,24 +36,32 @@
 /* y[i] = a*x[i] + y[i] */
 void saxpy_f32(size_t n, float  a, const float  *restrict x, float  *restrict y);
 void saxpy_f64(size_t n, double a, const double *restrict x, double *restrict y);
+void saxpy_f32_stride(size_t n, float a, const float *restrict x, float *restrict y, size_t s);
+void saxpy_f64_stride(size_t n, double a, const double *restrict x, double *restrict y, size_t s);
 void saxpy_f32_idx(size_t n, float  a, const float  *restrict x, float  *restrict y, const size_t *restrict idx);
 void saxpy_f64_idx(size_t n, double a, const double *restrict x, double *restrict y, const size_t *restrict idx);
 
 /* returns sum(x[i] * y[i]) */
 double dotprod_f32(size_t n, const float  *restrict x, const float  *restrict y);
 double dotprod_f64(size_t n, const double *restrict x, const double *restrict y);
+double dotprod_f32_stride(size_t n, const float *restrict x, const float *restrict y, size_t s);
+double dotprod_f64_stride(size_t n, const double *restrict x, const double *restrict y, size_t s);
 double dotprod_f32_idx(size_t n, const float  *restrict x, const float  *restrict y, const size_t *restrict idx);
 double dotprod_f64_idx(size_t n, const double *restrict x, const double *restrict y, const size_t *restrict idx);
 
 /* z[i] = x[i] * y[i] */
 void elemmul_f32(size_t n, const float  *restrict x, const float  *restrict y, float  *restrict z);
 void elemmul_f64(size_t n, const double *restrict x, const double *restrict y, double *restrict z);
+void elemmul_f32_stride(size_t n, const float *restrict x, const float *restrict y, float *restrict z, size_t s);
+void elemmul_f64_stride(size_t n, const double *restrict x, const double *restrict y, float *restrict z, size_t s);
 void elemmul_f32_idx(size_t n, const float  *restrict x, const float  *restrict y, float  *restrict z, const size_t *restrict idx);
 void elemmul_f64_idx(size_t n, const double *restrict x, const double *restrict y, double *restrict z, const size_t *restrict idx);
 
 /* y[i] = a*x[i-1] + b*x[i] + c*x[i+1], for i in [1, n-1) */
 void stencil3_f32(size_t n, float  a, float  b, float  c, const float  *restrict x, float  *restrict y);
+void stencil3_f32_stride(size_t n, float a, float b, float c, const float *restrict x, float *restrict y, size_t s);
 void stencil3_f64(size_t n, double a, double b, double c, const double *restrict x, double *restrict y);
+void stencil3_f64_stride(size_t n, double a, double b, double c, const double *restrict x, double *restrict y, size_t s);
 
 /*
  * Reference implementations. Identical formulas to the *_idx kernels above

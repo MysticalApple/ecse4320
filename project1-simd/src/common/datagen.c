@@ -345,22 +345,16 @@ void fill_random_f64(double *a, size_t n, rng_t *r) {
 /* Index arrays (not cached)                                           */
 /* ------------------------------------------------------------------ */
 
-void build_index_array(size_t *idx, size_t n, long stride, rng_t *r) {
+void build_index_array(size_t *idx, size_t n, rng_t *r) {
     if (n == 0) return;
 
-    if (stride <= 0) {
-        /* Gather: start as identity, then Fisher-Yates shuffle. */
-        for (size_t i = 0; i < n; i++) idx[i] = i;
-        for (size_t i = n - 1; i > 0; i--) {
-            size_t j = (size_t)(rng_uniform(r) * (double)(i + 1));
-            if (j > i) j = i; /* guard against the rare rounding case */
-            size_t tmp = idx[i];
-            idx[i] = idx[j];
-            idx[j] = tmp;
-        }
-    } else {
-        for (size_t i = 0; i < n; i++) {
-            idx[i] = ((size_t)stride * i) % n;
-        }
+    /* Gather: start as identity, then Fisher-Yates shuffle. */
+    for (size_t i = 0; i < n; i++) idx[i] = i;
+    for (size_t i = n - 1; i > 0; i--) {
+        size_t j = (size_t)(rng_uniform(r) * (double)(i + 1));
+        if (j > i) j = i; /* guard against the rare rounding case */
+        size_t tmp = idx[i];
+        idx[i] = idx[j];
+        idx[j] = tmp;
     }
 }

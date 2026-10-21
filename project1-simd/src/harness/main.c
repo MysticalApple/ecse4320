@@ -95,20 +95,24 @@ const char *dtype_name_of(dtype_t d) { return d == DTYPE_F32 ? "f32" : "f64"; }
  * so the direct (contiguous) kernel is called; non-NULL means the
  * strided/gather kernel is called instead. stencil3 ignores idx entirely
  * (it's always direct -- see kernels.h). main() only builds idx at all
- * when --stride != 1.
+ * when --stride = 0.
  */
 void run_kernel_once(kernel_t kernel, dtype_t dtype, size_t n, void *x, void *y,
-                     void *z, const size_t *idx) {
+                     void *z, size_t s, const size_t *idx) {
     switch (kernel) {
     case KERNEL_SAXPY:
         if (dtype == DTYPE_F32) {
             if (idx)
                 saxpy_f32_idx(n, (float)A_COEF, x, y, idx);
+            else if (s > 1)
+                saxpy_f32_stride(n, (float)A_COEF, x, y, s);
             else
                 saxpy_f32(n, (float)A_COEF, x, y);
         } else {
             if (idx)
                 saxpy_f64_idx(n, A_COEF, x, y, idx);
+            else if (s > 1)
+                saxpy_f64_stride(n, A_COEF, x, y, s);
             else
                 saxpy_f64(n, A_COEF, x, y);
         }
@@ -117,34 +121,58 @@ void run_kernel_once(kernel_t kernel, dtype_t dtype, size_t n, void *x, void *y,
     case KERNEL_DOTPROD:
         /* volatile forces the result to actually be produced, so the
          * whole loop can't be optimized away as dead code. */
-        volatile double s;
-        if (dtype == DTYPE_F32)
-            s = idx ? dotprod_f32_idx(n, x, y, idx) : dotprod_f32(n, x, y);
-        else
-            s = idx ? dotprod_f64_idx(n, x, y, idx) : dotprod_f64(n, x, y);
-        (void)s;
+        volatile double sum;
+        if (dtype == DTYPE_F32) {
+            if (idx)
+                sum = dotprod_f32_idx(n, x, y, idx);
+            else if (s > 1)
+                sum = dotprod_f32_stride(n, x, y, s);
+            else
+                sum = dotprod_f32(n, x, y);
+        } else {
+            if (idx)
+                sum = dotprod_f64_idx(n, x, y, idx);
+            else if (s > 1)
+                sum = dotprod_f64_stride(n, x, y, s);
+            else
+                sum = dotprod_f64(n, x, y);
+        }
+        (void)sum;
         break;
 
     case KERNEL_ELEMMUL:
         if (dtype == DTYPE_F32) {
             if (idx)
                 elemmul_f32_idx(n, x, y, z, idx);
+            else if (s > 1)
+                elemmul_f32_stride(n, x, y, z, s);
             else
                 elemmul_f32(n, x, y, z);
         } else {
             if (idx)
                 elemmul_f64_idx(n, x, y, z, idx);
+            else if (s > 1)
+                elemmul_f64_stride(n, x, y, z, s);
             else
                 elemmul_f64(n, x, y, z);
         }
         break;
 
     case KERNEL_STENCIL3:
-        if (dtype == DTYPE_F32)
-            stencil3_f32(n, (float)STENCIL_A, (float)STENCIL_B,
-                         (float)STENCIL_C, x, y);
-        else
-            stencil3_f64(n, STENCIL_A, STENCIL_B, STENCIL_C, x, y);
+        if (dtype == DTYPE_F32) {
+            if (s > 1)
+                stencil3_f32_stride(n, (float)STENCIL_A, (float)STENCIL_B,
+                                    (float)STENCIL_C, x, y, s);
+            else
+                stencil3_f32(n, (float)STENCIL_A, (float)STENCIL_B,
+                             (float)STENCIL_C, x, y);
+        } else {
+            if (s > 1)
+                stencil3_f64_stride(n, STENCIL_A, STENCIL_B, STENCIL_C, x, y,
+                                    s);
+            else
+                stencil3_f64(n, STENCIL_A, STENCIL_B, STENCIL_C, x, y);
+        }
         break;
     }
 }
@@ -203,7 +231,7 @@ const size_t *ensure_idx(const size_t *idx, size_t n, size_t **owned) {
  * differences there are expected and not a bug.
  */
 static int run_correctness_check(kernel_t kernel, dtype_t dtype, size_t n,
-                                 const void *x, const void *y,
+                                 const void *x, const void *y, size_t s,
                                  const size_t *idx) {
 
     size_t elem_size = (dtype == DTYPE_F32) ? sizeof(float) : sizeof(double);
@@ -225,12 +253,16 @@ static int run_correctness_check(kernel_t kernel, dtype_t dtype, size_t n,
             saxpy_f32_ref(n, (float)A_COEF, x, y_ref, ref_idx);
             if (idx)
                 saxpy_f32_idx(n, (float)A_COEF, x, y_test, idx);
+            else if (s > 1)
+                saxpy_f32_stride(n, (float)A_COEF, x, y_test, s);
             else
                 saxpy_f32(n, (float)A_COEF, x, y_test);
         } else {
             saxpy_f64_ref(n, A_COEF, x, y_ref, ref_idx);
             if (idx)
                 saxpy_f64_idx(n, A_COEF, x, y_test, idx);
+            else if (s > 1)
+                saxpy_f64_stride(n, A_COEF, x, y_test, s);
             else
                 saxpy_f64(n, A_COEF, x, y_test);
         }
@@ -245,10 +277,20 @@ static int run_correctness_check(kernel_t kernel, dtype_t dtype, size_t n,
         double s_ref, s_test;
         if (dtype == DTYPE_F32) {
             s_ref = dotprod_f32_ref(n, x, y, ref_idx);
-            s_test = idx ? dotprod_f32_idx(n, x, y, idx) : dotprod_f32(n, x, y);
+            if (idx)
+                s_test = dotprod_f32_idx(n, x, y, idx);
+            else if (s > 1)
+                s_test = dotprod_f32_stride(n, x, y, s);
+            else
+                s_test = dotprod_f32(n, x, y);
         } else {
             s_ref = dotprod_f64_ref(n, x, y, ref_idx);
-            s_test = idx ? dotprod_f64_idx(n, x, y, idx) : dotprod_f64(n, x, y);
+            if (idx)
+                s_test = dotprod_f64_idx(n, x, y, idx);
+            else if (s > 1)
+                s_test = dotprod_f64_stride(n, x, y, s);
+            else
+                s_test = dotprod_f64(n, x, y);
         }
 
         double diff = fabs(s_ref - s_test);
@@ -265,12 +307,16 @@ static int run_correctness_check(kernel_t kernel, dtype_t dtype, size_t n,
             elemmul_f32_ref(n, x, y, z_ref, ref_idx);
             if (idx)
                 elemmul_f32_idx(n, x, y, z_test, idx);
+            else if (s > 1)
+                elemmul_f32_stride(n, x, y, z_test, s);
             else
                 elemmul_f32(n, x, y, z_test);
         } else {
             elemmul_f64_ref(n, x, y, z_ref, ref_idx);
             if (idx)
                 elemmul_f64_idx(n, x, y, z_test, idx);
+            else if (s > 1)
+                elemmul_f64_stride(n, x, y, z_test, s);
             else
                 elemmul_f64(n, x, y, z_test);
         }
@@ -296,11 +342,19 @@ static int run_correctness_check(kernel_t kernel, dtype_t dtype, size_t n,
         if (dtype == DTYPE_F32) {
             stencil3_f32_ref(n, (float)STENCIL_A, (float)STENCIL_B,
                              (float)STENCIL_C, x, y_ref);
-            stencil3_f32(n, (float)STENCIL_A, (float)STENCIL_B,
-                         (float)STENCIL_C, x, y_test);
+            if (s > 1)
+                stencil3_f32_stride(n, (float)STENCIL_A, (float)STENCIL_B,
+                                    (float)STENCIL_C, x, y_test, s);
+            else
+                stencil3_f32(n, (float)STENCIL_A, (float)STENCIL_B,
+                             (float)STENCIL_C, x, y_test);
         } else {
             stencil3_f64_ref(n, STENCIL_A, STENCIL_B, STENCIL_C, x, y_ref);
-            stencil3_f64(n, STENCIL_A, STENCIL_B, STENCIL_C, x, y_test);
+            if (s > 1)
+                stencil3_f64_stride(n, STENCIL_A, STENCIL_B, STENCIL_C, x,
+                                    y_test, s);
+            else
+                stencil3_f64(n, STENCIL_A, STENCIL_B, STENCIL_C, x, y_test);
         }
 
         ok = nearly_equal_arr(y_ref, y_test, n, dtype, rel_tol);
@@ -476,9 +530,9 @@ int main(int argc, char **argv) {
      * as "use the direct, contiguous kernel". It's only built when the
      * stride/gather access pattern is actually being exercised. */
     size_t *idx = NULL;
-    if (kernel != KERNEL_STENCIL3 && stride != 1) {
+    if (kernel != KERNEL_STENCIL3 && stride == 0) {
         idx = malloc(n * sizeof(size_t));
-        build_index_array(idx, n, stride, &rng);
+        build_index_array(idx, n, &rng);
     }
 
     if (dtype == DTYPE_F32) {
@@ -494,19 +548,20 @@ int main(int argc, char **argv) {
      * continue accumulating across the timed repetitions below doesn't
      * change performance -- only numerical values, which we've already
      * validated here. */
-    int checksum_ok = run_correctness_check(kernel, dtype, n, x, y, idx);
+    int checksum_ok =
+        run_correctness_check(kernel, dtype, n, x, y, stride, idx);
 
     struct timespec ts = {.tv_sec = 0, .tv_nsec = 10000000};
     for (int rep = 0; rep < reps; rep++) {
         nanosleep(&ts, NULL);
 
         for (int i = 0; i < warmup; i++) {
-            run_kernel_once(kernel, dtype, n, x, y, z, idx);
+            run_kernel_once(kernel, dtype, n, x, y, z, stride, idx);
         }
 
         double t0 = now_seconds();
         for (int j = 0; j < inner; j++) {
-            run_kernel_once(kernel, dtype, n, x, y, z, idx);
+            run_kernel_once(kernel, dtype, n, x, y, z, stride, idx);
         }
         double t1 = now_seconds();
 

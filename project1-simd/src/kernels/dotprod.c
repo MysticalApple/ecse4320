@@ -32,6 +32,26 @@ double dotprod_f64(size_t n, const double *restrict x, const double *restrict y)
     return sum;
 }
 
+double dotprod_f32_stride(size_t n, const float *restrict x, const float *restrict y, size_t s) {
+    float sum = 0.0f;
+    for (size_t start = 0; start < s && start < n; start++) {
+        for (size_t i = start; i < n; i += s) {
+            sum += x[i] * y[i];
+        }
+    }
+    return (double)sum;
+}
+
+double dotprod_f64_stride(size_t n, const double *restrict x, const double *restrict y, size_t s) {
+    float sum = 0.0f;
+    for (size_t start = 0; start < s && start < n; start++) {
+        for (size_t i = start; i < n; i += s) {
+            sum += x[i] * y[i];
+        }
+    }
+    return (double)sum;
+}
+
 double dotprod_f32_idx(size_t n, const float *restrict x, const float *restrict y, const size_t *restrict idx) {
     float sum = 0.0f;
     for (size_t i = 0; i < n; i++) {
