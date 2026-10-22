@@ -71,14 +71,21 @@ for kernel, kernel_df in df.groupby("kernel"):
             .sort_values("stride")
         )
 
-        x = grouped["stride"].to_numpy(dtype=float)
-        y = grouped["median"].to_numpy(dtype=float)
+        x = grouped["stride"]
+        x = [str(s) for s in x]
+        x[0] = "Gather"
+        x.append(x.pop(0))
+        y = grouped["median"].to_numpy(dtype="float")
+
 
         # Asymmetric error bars: distance from median to each quartile.
         yerr = np.vstack([
             y - grouped["q25"].to_numpy(),
             grouped["q75"].to_numpy() - y,
         ])
+
+        y = np.roll(y, -1)
+        yerr = np.roll(yerr, -1)
 
         ax.bar(
             x, y,
@@ -102,7 +109,7 @@ for kernel, kernel_df in df.groupby("kernel"):
         #     alpha=0.85,
         # )
 
-    ax.set_xscale("linear")
+    # ax.set_xscale("linear")
     ax.set_yscale("linear")
     ax.set_xlabel("Stride (n)")
     ax.set_ylabel("GBPS")
@@ -111,7 +118,7 @@ for kernel, kernel_df in df.groupby("kernel"):
     ax.legend(fontsize="small")
     fig.tight_layout()
 
-    plt.show()
+    # plt.show()
 
     # Sanitize the kernel name for use as a filename.
     safe_kernel = "".join(
