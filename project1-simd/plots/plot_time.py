@@ -69,7 +69,7 @@ for kernel, kernel_df in df.groupby("kernel"):
 
         # Median and interquartile range of repeated measurements.
         grouped = (
-            variant_df.groupby("n")["gflops"]
+            variant_df.groupby("n")["time_ns"]
             .agg(
                 median="median",
                 q25=lambda s: s.quantile(0.25),
@@ -101,9 +101,9 @@ for kernel, kernel_df in df.groupby("kernel"):
         )
 
     ax.set_xscale("log", base=2)
-    ax.set_yscale("linear")
+    ax.set_yscale("log")
     ax.set_xlabel("Working set size (n)")
-    ax.set_ylabel("GFLOPS")
+    ax.set_ylabel("Time (ns)")
     ax.set_title(f"Kernel: {kernel}")
     ax.grid(True, which="both", linestyle=":", alpha=0.4)
     ax.legend(fontsize="small")
@@ -114,11 +114,9 @@ for kernel, kernel_df in df.groupby("kernel"):
         c if c.isalnum() or c in "-_." else "_"
         for c in str(kernel)
     )
-    output_file = f"./locality_sweep_{safe_kernel}.png"
+    output_file = f"./time_{safe_kernel}.png"
 
     fig.savefig(output_file, dpi=200)
     plt.close(fig)
 
     print(f"saved {output_file}")
-
-
