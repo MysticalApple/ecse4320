@@ -551,9 +551,10 @@ int main(int argc, char **argv) {
     int checksum_ok =
         run_correctness_check(kernel, dtype, n, x, y, stride, idx);
 
-    struct timespec ts = {.tv_sec = 0, .tv_nsec = 10000000};
+    struct timespec ts_10ms = {.tv_sec = 0, .tv_nsec = 10000000};
+    // struct timespec ts_100us = {.tv_sec = 0, .tv_nsec = 100000};
     for (int rep = 0; rep < reps; rep++) {
-        nanosleep(&ts, NULL);
+        nanosleep(&ts_10ms, NULL);
 
         for (int i = 0; i < warmup; i++) {
             run_kernel_once(kernel, dtype, n, x, y, z, stride, idx);
