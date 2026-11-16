@@ -131,13 +131,53 @@ Governor: Performance
     \label{fig:performance_results}
 \end{figure}
 
-We will first examine SAXPY and Elem-mul, as their structure is similar (two reads, followed by one write). Under the assumption that memory bandwidth will be their biggest bottleneck, we should expect to see sharp drops in performance as $n$ grows larger than a cache's size. SAXPY uses 8 bytes of memory for each $n$, wheras Elem-mul uses 12 bytes. Based on the cache sizes and $n$'s growth in powers of 2, we should expect to see transitions at $n = 2^{13}$ (L1 to L2), $2^{17}$ (L2 to L3), and $2^{22}$ (L3 to DRAM).
+We will first examine SAXPY and Elem-mul, as their structure is similar (two
+reads, followed by one write). Under the assumption that memory bandwidth will
+be their biggest bottleneck, we should expect to see sharp drops in performance
+as $n$ grows larger than a cache's size. SAXPY uses 8 bytes of memory for each
+$n$, wheras Elem-mul uses 12 bytes. Based on the cache sizes and $n$'s growth
+in powers of 2, we should expect to see transitions at $n = 2^{13}$ (L1 to L2),
+$2^{17}$ (L2 to L3), and $2^{22}$ (L3 to DRAM).
 
-In fact, this is exactly what we see. Throughput grows to peaks of 70 and 31 GFLOPS (9x speedup) at $2^{12}$ elements for SAXPY and Elem-mul respectively. In this regime, runtime is likely dominated by initialization overhead and pipeline latency for the vector processor. Each additional element contributes minimally to runtime, as reading from and writing to L1 cache is fast enough (sub-nanosecond) to keep the vector processor busy.
+In fact, this is exactly what we see. Throughput grows to peaks of 70 and 31
+GFLOPS (9x speedup) at $2^{12}$ elements for SAXPY and Elem-mul respectively.
+In this regime, runtime is likely dominated by initialization overhead and
+pipeline latency for the vector processor. Each additional element contributes
+minimally to runtime, as reading from and writing to L1 cache is fast enough
+(sub-nanosecond) to keep the vector processor busy.
 
-At $2^{13}$ elements, performance drops down to 58 and 19 GFLOPS respectively. Around one third of the data no longer fits in L1 cache, so the CPU must read and write back some data to L2, which is farther from the core and thus has higher latency than L1. Because Elem-mul accesses 12 bytes per element while SAXPY only accesses 8, Elem-mul is more significantly affected by the increased memory latency, so its throughput drops by a greater percentage than that of SAXPY's drop. Within this regime, throughput is limited by memory bandwidth and stays mostly constant.
+At $2^{13}$ elements, performance drops down to 58 and 19 GFLOPS respectively.
+Around one third of the data no longer fits in L1 cache, so the CPU must read
+and write back some data to L2, which is farther from the core and thus has
+higher latency than L1. Because Elem-mul accesses 12 bytes per element while
+SAXPY only accesses 8, Elem-mul is more significantly affected by the increased
+memory latency, so its throughput drops by a greater percentage than that of
+SAXPY's drop. Within this regime, throughput is limited by memory bandwidth and
+stays mostly constant.
 
 
+At $2^{17}$ elements, performance drops again to 30 and 10 GFLOPS respectively
+(Elem-mul begins dropping earlier around $n=2^{16}$, likely due to the greater
+memory usage as compared to SAXPY). The CPU must reach out to L3 (last-level)
+cache, which is shared among all cores and has the highest latency, so
+bandwidth is even more restricted than in the L2 regime. Within the L3 regime,
+throughput seems to increase with working set size in both the vectorized and
+scalar versions. This increase is possible caused by more efficient L3 usage as
+the memory subsystem is able to identify access patterns and pre-fetch more data
+the longer the benchmark lasts. The memory subsystem likely has more advanced
+optimizations for L3 to keep it fast despite high single-request latency.
+
+Also, in this regime, the gap between the 512-bit AVX-512 implementation and
+128-bit SSE2 implementation closes significantly. Up until this point, the SSE2
+version was likely compute-limited rather than bandwidth-limited, and so was
+not affected by the transitions between cache levels. Here, we likely approach
+the knee where the SSE2 compute limit meets the L3 cache bandwidth limit, so
+the two vector implementations yield similar throughput.
+
+Past $2^{22}$ elements, throughput drops one final time as the CPU needs to
+read from and write to DRAM, which has significantly higher latency and lower
+bandwidth. The throughput becomes constant, and the speedup drops to 1x as DRAM
+becomes a bottleneck for both the vector and scalar implementations.
 
 \section*{Alignment, Tail, Stride/Gather Studies}
 
