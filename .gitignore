@@ -1,4 +1,7 @@
 **/build/
-**/plots/*.png
 **/datagen_cache/
-**/data/
+**/report.aux
+**/report.fdb_latexmk
+**/report.fls
+**/report.log
+**/report.out
