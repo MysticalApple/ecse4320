@@ -41,6 +41,7 @@ df = df[
     (df["align_offset"] == 0)
     & (df["stride"] == 1)
     & (df["checksum_ok"] == 1)
+    & (df["rep"] != 0)
 ].copy()
 
 # Log-log axes require positive x and y values.
@@ -62,7 +63,7 @@ variant_colors = {
 }
 
 for kernel, kernel_df in df.groupby("kernel"):
-    fig, ax = plt.subplots(figsize=(9, 6))
+    fig, ax = plt.subplots(figsize=(6, 4))
 
     for variant, variant_df in kernel_df.groupby("variant"):
         color = variant_colors[variant]
@@ -114,7 +115,7 @@ for kernel, kernel_df in df.groupby("kernel"):
         c if c.isalnum() or c in "-_." else "_"
         for c in str(kernel)
     )
-    output_file = f"./flops_{safe_kernel}.png"
+    output_file = f"./flops_{safe_kernel}.pdf"
 
     fig.savefig(output_file, dpi=200)
     plt.close(fig)

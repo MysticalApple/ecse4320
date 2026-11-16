@@ -39,6 +39,7 @@ df = df[
     (df["align_offset"] == 0)
     & (df["stride"] == 1)
     & (df["checksum_ok"] == 1)
+    & (df["rep"] != 0)
 ].copy()
 
 # Remove invalid values; log axes require positive intensity and GFLOPS.
@@ -113,9 +114,9 @@ ax.legend(
 fig.tight_layout()
 plt.show()
 
-fig.savefig("roofline.png", dpi=200, bbox_inches="tight")
+fig.savefig("roofline.pdf", dpi=200, bbox_inches="tight")
 
 
 plt.close(fig)
 
-print(f"saved ./roofline.png")
+print(f"saved ./roofline.pdf")

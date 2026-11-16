@@ -122,7 +122,7 @@ for kernel, kernel_df in df.groupby("kernel"):
 
 # plt.show()
 
-output_file = f"./datatype.png"
+output_file = f"./datatype.pdf"
 
 fig.savefig(output_file, dpi=200)
 plt.close(fig)
