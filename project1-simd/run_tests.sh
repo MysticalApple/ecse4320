@@ -48,8 +48,9 @@ echo "Running alignment sweep..." >&3
 exec > data/alignment.csv
 for ((n = 0 ; n <= 128 ; n++));
 do
-    taskset -c 0 ./build/bin/harness_scalar --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 12)) --align-offset $n
-    taskset -c 0 ./build/bin/harness_autovec_widest --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 12)) --align-offset $n
+    taskset -c 0 ./build/bin/harness_scalar --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 15)) --align-offset $n
+    taskset -c 0 ./build/bin/harness_autovec_default --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 15)) --align-offset $n
+    taskset -c 0 ./build/bin/harness_autovec_widest --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 15)) --align-offset $n
 done
 
 
@@ -57,8 +58,9 @@ echo "Running tail sweep..." >&3
 exec > data/tail.csv
 for ((n = 0 ; n <= 128 ; n++));
 do
-    taskset -c 0 ./build/bin/harness_scalar --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $(((2 ** 12) + n))
-    taskset -c 0 ./build/bin/harness_autovec_widest --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $(((2 ** 12) + n))
+    taskset -c 0 ./build/bin/harness_scalar --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $(((2 ** 15) + n))
+    taskset -c 0 ./build/bin/harness_autovec_default --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $(((2 ** 15) + n))
+    taskset -c 0 ./build/bin/harness_autovec_widest --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $(((2 ** 15) + n))
 done
 
 # Stride/gather study. Show how non-unit stride reduces effective bandwidth and
