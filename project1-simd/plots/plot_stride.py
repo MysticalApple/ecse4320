@@ -56,7 +56,7 @@ variant_colors = {
 for kernel, kernel_df in df.groupby("kernel"):
     fig, ax = plt.subplots(figsize=(9, 6))
 
-    variants = sorted(kernel_df["variant"].unique())
+    variants = kernel_df["variant"].unique()
     n_variants = len(variants)
 
     # Positions for each stride group.
@@ -109,7 +109,7 @@ for kernel, kernel_df in df.groupby("kernel"):
     ax.set_xticklabels(labels)
 
     ax.set_yscale("linear")
-    ax.set_xlabel("Stride (n)")
+    ax.set_xlabel("Stride (# elements)")
     ax.set_ylabel("GBPS")
     ax.set_title(f"Kernel: {kernel}")
     ax.grid(True, which="both", linestyle=":", alpha=0.4)

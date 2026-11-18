@@ -40,15 +40,38 @@
 \newpage
 \section*{Methodology}
 
-The benchmark suite is written in C, with one harness program that handles random data generation, dispatches and times the kernels, then outputs data over stdout in CSV format. Each kernel (SAXPY, Elementwise multiply, and 1D three-point stencil) has three versions: 1-stride, n-stride, and gather. Splitting the functions based on stride allows the compiler to better optimize for memory access patterns. The harness selects which one to run at run-time depending on command-line flags.
+The benchmark suite is written in C, with one harness program that handles
+random data generation, dispatches and times the kernels, then outputs data
+over stdout in CSV format. Each kernel (SAXPY, Elementwise multiply, and 1D
+three-point stencil) has three versions: 1-stride, n-stride, and gather.
+Splitting the functions based on stride allows the compiler to better optimize
+for memory access patterns. The harness selects which one to run at run-time
+depending on command-line flags. All kernel outputs are compared against a
+known-good scalar kernel to validate correctness.
 
-Each test begins by running the selected kernel 3 times over the full test data to warm up the system (cache, SIMD units, branch predictor, etc.), begins timing (using \\ \texttt{clock\_gettime(CLOCK\_MONOTONIC)} for nano-second precision), runs the kernel 10 more times, stops timing, then reports the time per kernel and computed values (throughput, memory bandwidth, etc.). This entire process is repeated 10 times yielding 10 rows in the CSV table, and the first one is discarded for data analysis and plotting. The exact series of benchmarks can be found in \texttt{run\_tests.sh}.
+Each test begins by running the selected kernel 3 times over the full test data
+to warm up the system (cache, SIMD units, branch predictor, etc.), begins
+timing (using \\ \texttt{clock\_gettime(CLOCK\_MONOTONIC)} for nano-second
+precision), runs the kernel 10 more times, stops timing, then reports the time
+per kernel and computed values (throughput, memory bandwidth, etc.). This
+entire process is repeated 10 times yielding 10 rows in the CSV table, and the
+first one is discarded for data analysis and plotting. The exact series of
+benchmarks can be found in \texttt{run\_tests.sh}.
 
-Test data are all regular floating point values (no sub-normals) between -1 and 1 pre-generated using a seeded PRNG, and cached in a file. If the file contains sufficiently many values for the requested working set size, then it will be read and used directly as the inputs. Otherwise, the harness will expand the cache file to match the working set size. All tests ran with the same seed using the same data cache. Note that single- and double-precision tests need separate data caches.
+Test data are all regular floating point values (no sub-normals) between -1 and
+1 pre-generated using a seeded PRNG, and cached in a file. If the file contains
+sufficiently many values for the requested working set size, then it will be
+read and used directly as the inputs. Otherwise, the harness will expand the
+cache file to match the working set size. All tests ran with the same seed
+using the same data cache. Note that single- and double-precision tests need
+separate data caches.
 
-Assume all tests involve cache-line-aligned, single-precision elements with a unit-stride access pattern unless stated otherwise.
+Assume all tests involve cache-line-aligned, single-precision elements with a
+unit-stride access pattern unless stated otherwise.
 
-All three harnesses were compiled locally on the benchmark machine with GCC 16.2.1 under the c23 standard. Vectorization is set at compile time using these flags:
+All three harnesses were compiled locally on the benchmark machine with GCC
+16.2.1 under the c23 standard. Vectorization is set at compile time using these
+flags:
 \begin{itemize}
     \item scalar: \texttt{-O3 -fno-tree-vectorize}
 
@@ -59,15 +82,89 @@ All three harnesses were compiled locally on the benchmark machine with GCC 16.2
 
 
 Linux Kernel Version: 7.2.11-zen1-1-zen \\
-CPU: AMD Ryzen 7 9700X (Core 0) \\
+CPU: AMD Ryzen 7 9700X (benchmarks pinned to core 0) \\
 Caches: L1d 48KB, L2 1024KB, L3 32MB \\
 Max Clock Speed: 5.58 GHz \\
 Governor: Performance
 
 \newpage
 \section*{Vectorization Verification}
+The following are the scalar hot loops. All floating point arithmetic
+instructions included use the -ss variant, or \textbf{s}calar
+\textbf{s}ingle-precision (the f64 versions use -sd variants):
+\begin{verbatim}
+SAXPY:
+movss  xmm0,DWORD PTR [rsi+rax*4]
+mulss  xmm0,xmm1
+addss  xmm0,DWORD PTR [rdx+rax*4]
+movss  DWORD PTR [rdx+rax*4],xmm0
 
+Elem-mul:
+movss  xmm0,DWORD PTR [rsi+rax*4]
+mulss  xmm0,DWORD PTR [rdx+rax*4]
+movss  DWORD PTR [rcx+rax*4],xmm0
 
+Stencil3:
+movss  xmm4,DWORD PTR [rsi+rax*1]
+mulss  xmm0,xmm1
+mulss  xmm4,xmm5
+addss  xmm4,xmm0
+movss  xmm0,DWORD PTR [rsi+rax*1+0x8]
+movaps xmm3,xmm0
+mulss  xmm3,xmm2
+addss  xmm3,xmm4
+movss  DWORD PTR [rdx+rax*1+0x4],xmm3
+\end{verbatim}
+
+The default autovectorized implementations look very similar, but use the -ps variants (\textbf{p}acked \textbf{s}ingle-precision) to operate on packed (vectorized) floats, and access memory in \texttt{XMMWORD}s (128 bits):
+\begin{verbatim}
+SAXPY:
+movups xmm1,XMMWORD PTR [rsi+rax*1]
+movups xmm4,XMMWORD PTR [rdx+rax*1]
+mulps  xmm1,xmm2
+addps  xmm1,xmm4
+movups XMMWORD PTR [rdx+rax*1],xmm1
+
+Elem-mul:
+movups xmm0,XMMWORD PTR [rsi+rax*1]
+movups xmm2,XMMWORD PTR [rdx+rax*1]
+mulps  xmm0,xmm2
+movups XMMWORD PTR [rcx+rax*1],xmm0
+
+Stencil3:
+movups xmm0,XMMWORD PTR [rsi+rax*1]
+movups xmm3,XMMWORD PTR [rsi+rax*1+0x4]
+mulps  xmm0,xmm6
+mulps  xmm3,xmm5
+addps  xmm0,xmm3
+movups xmm3,XMMWORD PTR [rsi+rax*1+0x8]
+mulps  xmm3,xmm4
+addps  xmm0,xmm3
+movups XMMWORD PTR [rdx+rax*1+0x4],xmm0
+\end{verbatim}
+
+The widest autovectorized implementations use AVX's v- notation, and access the zmm (512-bit) registers:
+\begin{verbatim}
+SAXPY:
+vmulps zmm1,zmm0,ZMMWORD PTR [rsi+rax*1]
+vaddps zmm1,zmm1,ZMMWORD PTR [rdx+rax*1]
+vmovups ZMMWORD PTR [rdx+rax*1],zmm1
+
+Elem-mul:
+vmovups zmm0,ZMMWORD PTR [rdx+rax*1]
+vmulps zmm0,zmm0,ZMMWORD PTR [rsi+rax*1]
+vmovups ZMMWORD PTR [rcx+rax*1],zmm0
+
+Stencil3:
+vmulps zmm4,zmm1,ZMMWORD PTR [rsi+rax*1+0x4]
+vmulps zmm3,zmm0,ZMMWORD PTR [rsi+rax*1]
+vaddps zmm3,zmm3,zmm4
+vmulps zmm4,zmm2,ZMMWORD PTR [rsi+rax*1+0x8]
+vaddps zmm3,zmm3,zmm4
+vmovups ZMMWORD PTR [rdx+rax*1+0x4],zmm3
+\end{verbatim}
+
+The strided and gather kernels, although not shown, follow the same patterns.
 
 
 \newpage
@@ -160,9 +257,9 @@ At $2^{17}$ elements, performance drops again to 30 and 10 GFLOPS respectively
 memory usage as compared to SAXPY). The CPU must reach out to L3 (last-level)
 cache, which is shared among all cores and has the highest latency, so
 bandwidth is even more restricted than in the L2 regime. Within the L3 regime,
-throughput seems to increase with working set size in both the vectorized and
-scalar versions. This increase is possible caused by more efficient L3 usage as
-the memory subsystem is able to identify access patterns and pre-fetch more data
+throughput increases with working set size in both the vectorized and scalar
+versions. This increase is possibly caused by more efficient L3 usage as the
+memory subsystem is able to identify access patterns and pre-fetch more data
 the longer the benchmark lasts. The memory subsystem likely has more advanced
 optimizations for L3 to keep it fast despite high single-request latency.
 
@@ -185,6 +282,7 @@ are re-used from the previous iteration), it is likely not memory-bound but
 compute-bound, until it requires DRAM accesses past $2^{22}$ elements and
 becomes memory-bound.
 
+\newpage
 \section*{Alignment, Tail, Stride/Gather Studies}
 
 \begin{figure}[H]
@@ -241,24 +339,101 @@ These results remained consistent across all kernels.
     \makebox[\textwidth][c]{%
         \includegraphics[width=\linewidth]{../plots/stride_saxpy.pdf}%
     }
-    \caption{SAXPY Bandwidth vs. Stride.}
+    \caption{SAXPY Bandwidth vs. Stride. $n = 2^{21}$ (L3 Cache)}
     \label{fig:stride}
 \end{figure}
 
+All three implementations achieved the highest memory bandwidth (and therefore
+throughput) with unit-stride, and experienced a decrease in bandwidth as stride
+increased. The vectorized implementations experienced a significantly greater
+impact from strided accesses than the scalar one. All three implementations
+performed equally poorly with gather accesses.
+
+These results are entirely expected. For larger vector widths, strided
+accesses mean accessing multiple cache lines per iteration, so the performance
+impact is larger than for the scalar implementation, which will switch cache
+lines more often but still only access one cache line in each iteration.
+
+Gather patterns exert the most pressure on memory, because the CPU must first
+access the index array to find the next index before accessing the value at
+that index (increasing memory accesses per iteration). The randomized indices
+also prevent the memory subsystem from predicting accesses and pre-fetching
+expected data.
+
+Because the implementations are so significantly memory-bound for high strides
+and gather patterns, the CPU stays idle most of the time while waiting for
+memory reads. The vector (and scalar) processors cannot be fully utilized, and
+achieve similar results.
+
+\newpage
 \section*{Data-type Comparison}
 
 \begin{figure}[H]
     \makebox[\textwidth][c]{%
         \includegraphics[width=\linewidth]{../plots/datatype.pdf}%
     }
-    \caption{}
+    \caption{Single- vs. Double-precision Throughput. $n=2^{15}$ f32, $2^{14}$ f64 (L2 Cache)}
     \label{fig:datatype}
 \end{figure}
 
+The vectorized implementation consistently achieves half the throughput with
+double-precision values as compared to single-precision floats (for the same
+total size in memory). The scalar implementation achieves the same throughput
+for single- and double-precision floats.
+
+The CPU's scalar floating point unit likely uses the same hardware for single-
+and double-precision floats, but restricts itself to half of the bits when
+performing single-precision operations. Thus, both data widths go through the
+unit in the same number of cycles.
+
+The vector processor, on the other hand, fully utilizes the width of its
+registers. Each vector register is 512 bits, and so can hold either 16 f32 or 8
+f64s. Thus, it has half the number of lanes when operating on f64 elements, and
+can perform half as many operations per cycle.
+
+\newpage
 \section*{Roofline and Quantitative Analysis}
+
+\begin{figure}[H]
+    \makebox[\textwidth][c]{%
+        \includegraphics[width=\linewidth]{../plots/roofline.pdf}%
+    }
+    \caption{Roofline Performance Model. $n=2^{15}$ f32,  $2^{14}$ f64 (L2 Cache)\\
+    Max bandwidth was measured using Intel MLC on a 256 kB working set.\\
+    Max throughput is the highest observed in any experiment for this project.}
+    \label{fig:roofline}
+\end{figure}
+
+The roofline diagram supports conclusions from earlier (see Locality and
+Memory-bound Analysis). Using the widest vectorized implementation, SAXPY and
+Elem-mul are generally memory-bound and operating close to the bandwidth roof.
+Stencil3 (the single-precision version, at least) is compute-bound, and
+operates close to the compute roof.
+
+In the memory-bound regime, throughput is strongly corelated with arithmetic
+intensity.
+
+\newpage
 \section*{AI-use Transparency and Failure Case}
 
-Claude Sonnet 5.5 was used to write an initial pass of the benchmark code, as well as a few short snippets of Python code for some of the plots.
+Claude Sonnet 5.5 was used to write an initial pass of the benchmark code, as
+well as a few short snippets of Python code for some of the plots. I designed
+all experiments and plots without AI assistance. All words in this report are
+entirely my own.
+
+Claude's initial implementation of strided accesses used the same mechanism as
+gather by pre-generating an array of strided indices. This design decision made
+all non-unit strides perform equally to gather accesses, since each iteration
+performed an additional memory access, and the memory subsystem could not
+predict access patterns as effectively. Memory bandwidth dominated, and
+vectorization showed no speedup.
+
+I fixed the implementation manually by splitting strided accesses into their
+own functions with a stride known at compile-time, so the compiler could
+optimize the SIMD instructions for the requested stride (with no additional
+index array necessary). This fix increased the kernel function sizes
+significantly (different instructions for each possible stride), but gave the
+expected results (see Fig. \ref{fig:stride}).
 
 % ---- References ----
 % \newpage

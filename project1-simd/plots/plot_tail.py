@@ -107,7 +107,7 @@ for kernel, kernel_df in df.groupby("kernel"):
     ax.xaxis.set_major_locator(MultipleLocator(8))
     ax.xaxis.set_minor_locator(MultipleLocator(2))
     ax.set_yscale("linear")
-    ax.set_xlabel("Tail size (n)")
+    ax.set_xlabel("Tail size (# elements)")
     ax.set_ylabel("GFLOPS")
     ax.set_title(f"Kernel: {kernel}")
     ax.grid(True, which="both", linestyle=":", alpha=0.4)

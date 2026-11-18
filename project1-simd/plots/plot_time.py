@@ -103,7 +103,7 @@ for kernel, kernel_df in df.groupby("kernel"):
 
     ax.set_xscale("log", base=2)
     ax.set_yscale("log")
-    ax.set_xlabel("Working set size (n)")
+    ax.set_xlabel("Working set size (# elements)")
     ax.set_ylabel("Time (ns)")
     ax.set_title(f"Kernel: {kernel}")
     ax.grid(True, which="both", linestyle=":", alpha=0.4)

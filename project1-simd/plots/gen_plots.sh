@@ -14,4 +14,6 @@
 
 ./plot_datatype.py ../data/datatype.csv &
 
+./plot_roofline.py ../data/roofline.csv &
+
 wait

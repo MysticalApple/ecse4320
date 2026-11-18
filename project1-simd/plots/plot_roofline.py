@@ -65,54 +65,92 @@ grouped = (
     .median()
 )
 
-# Give each kernel/variant combination a distinct style.
-configs = sorted(
-    set(zip(grouped["kernel"], grouped["variant"]))
-)
-colors = plt.get_cmap("turbo", max(len(configs), 1))
+# Assign a consistent color to each kernel and marker to each variant.
+kernels = sorted(grouped["kernel"].unique())
+variants = sorted(grouped["variant"].unique())
+dtypes = sorted(grouped["dtype"].unique())
+
+cmap = plt.get_cmap("turbo", max(len(kernels), 1))
+kernel_colors = {
+    kernel: cmap(i)
+    for i, kernel in enumerate(kernels)
+}
+
 markers = ["o", "s", "^", "D", "v", "P", "X", "<", ">", "*"]
+variant_markers = {
+    variant: markers[i % len(markers)]
+    for i, variant in enumerate(variants)
+}
 
 fig, ax = plt.subplots(figsize=(11, 7))
 
-for i, (kernel, variant) in enumerate(configs):
-    subset = grouped[
-        (grouped["kernel"] == kernel)
-        & (grouped["variant"] == variant)
-    ]
+for kernel in kernels:
+    for variant in variants:
+        for dtype in dtypes:
+            subset = grouped[
+                (grouped["kernel"] == kernel)
+                & (grouped["variant"] == variant)
+                & (grouped["dtype"] == dtype)
+            ]
 
-    color = colors(i)
-    marker = markers[i % len(markers)]
+            if subset.empty:
+                continue
 
-    ax.scatter(
-        subset["arithmetic_intensity"],
-        subset["gflops"],
-        color=[color],
-        marker=marker,
-        s=65,
-        alpha=0.85,
-        label=f"{kernel} / {variant}",
-        edgecolors="black",
-        linewidths=0.4,
-    )
+            ax.scatter(
+                subset["arithmetic_intensity"],
+                subset["gflops"],
+                color=kernel_colors[kernel],
+                marker=variant_markers[variant],
+                s=130 if dtype == "f64" else 65,
+                alpha=0.85,
+                label=f"{kernel} / {variant}" if dtype == "f64" else "",
+                edgecolors="black",
+                linewidths=0.4,
+            )
+
+max_bandwidth = 339
+max_throughput = 89
+
+# Determine the x-axis range.
+x_min = grouped["arithmetic_intensity"].min()
+x_max = grouped["arithmetic_intensity"].max()
+x_line = np.linspace(x_min, x_max, 200)
+
+# Maximum bandwidth: performance = bandwidth * arithmetic intensity.
+ax.plot(
+    x_line,
+    max_bandwidth * x_line,
+    linestyle="--",
+    color="black",
+    linewidth=1.5,
+    label=f"Max bandwidth ({max_bandwidth} GB/s)",
+)
+
+# Maximum throughput: horizontal performance ceiling.
+ax.axhline(
+    y=max_throughput,
+    linestyle="--",
+    color="red",
+    linewidth=1.5,
+    label=f"Max throughput ({max_throughput} GFLOPS)",
+)
 
 ax.set_xscale("linear")
 ax.set_yscale("linear")
 ax.set_xlabel("Arithmetic intensity (FLOPs / byte)")
 ax.set_ylabel("Performance (GFLOPS)")
-ax.set_title("Roofline-Style Performance Diagram")
+ax.set_title("Roofline Performance Model")
 ax.grid(True, which="both", linestyle=":", alpha=0.4)
 
 ax.legend(
-    title="Kernel / variant",
-    fontsize="small",
-    title_fontsize="small",
-    bbox_to_anchor=(1.02, 1),
+    title="Kernel / variant\nsmall=f32    big=f64",
+    fontsize="medium",
+    title_fontsize="medium",
     loc="upper left",
 )
 
 
 fig.tight_layout()
-plt.show()
 
 fig.savefig("roofline.pdf", dpi=200, bbox_inches="tight")
 
