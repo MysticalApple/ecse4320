@@ -90,15 +90,14 @@ done
 # bandwidth and estimated CPU peak FLOP rate.
 echo "Running tests for roofline data..." >&3
 exec > data/roofline.csv
-for n in 1 2 4 8
+for k in "saxpy" "elemmul" "stencil3"
 do
-    for k in "saxpy" "elemmul" "stencil3" "dotprod"
-    do
-        taskset -c 0 ./build/bin/harness_scalar --kernel $k --dtype f32 --inner 10 --reps 10 --n $((2 ** 24))
-        taskset -c 0 ./build/bin/harness_scalar --kernel $k --dtype f64 --inner 10 --reps 10 --n $((2 ** 24))
-        taskset -c 0 ./build/bin/harness_autovec_widest --kernel $k --dtype f32 --inner 10 --reps 10 --n $((2 ** 24))
-        taskset -c 0 ./build/bin/harness_autovec_widest --kernel $k --dtype f64 --inner 10 --reps 10 --n $((2 ** 24))
-    done
+    taskset -c 0 ./build/bin/harness_scalar --kernel $k --dtype f32 --inner 10 --reps 10 --n $((2 ** 15))
+    taskset -c 0 ./build/bin/harness_scalar --kernel $k --dtype f64 --inner 10 --reps 10 --n $((2 ** 14))
+    taskset -c 0 ./build/bin/harness_autovec_default --kernel $k --dtype f32 --inner 10 --reps 10 --n $((2 ** 15))
+    taskset -c 0 ./build/bin/harness_autovec_default --kernel $k --dtype f64 --inner 10 --reps 10 --n $((2 ** 14))
+    taskset -c 0 ./build/bin/harness_autovec_widest --kernel $k --dtype f32 --inner 10 --reps 10 --n $((2 ** 15))
+    taskset -c 0 ./build/bin/harness_autovec_widest --kernel $k --dtype f64 --inner 10 --reps 10 --n $((2 ** 14))
 done
 
 echo "Done." >&3
