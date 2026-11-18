@@ -80,14 +80,14 @@ Governor: Performance
         \centering
         \includegraphics[width=\linewidth]{../plots/flops_saxpy.pdf}
         \caption{SAXPY Throughput}
-        \label{fig:flops_saxpy}
+        \label{fig:flops-saxpy}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\linewidth]{../plots/speedup_saxpy.pdf}
         \caption{SAXPY Speedup}
-        \label{fig:speedup_saxpy}
+        \label{fig:speedup-saxpy}
     \end{subfigure}
 
 
@@ -98,14 +98,14 @@ Governor: Performance
         \centering
         \includegraphics[width=\linewidth]{../plots/flops_elemmul.pdf}
         \caption{Elem-mul Throughput}
-        \label{fig:flops_elemmul}
+        \label{fig:flops-elemmul}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\linewidth]{../plots/speedup_elemmul.pdf}
         \caption{Elem-mul Speedup}
-        \label{fig:speedup_elemmul}
+        \label{fig:speedup-elemmul}
     \end{subfigure}
 
     \vspace{0.3cm}
@@ -115,20 +115,20 @@ Governor: Performance
         \centering
         \includegraphics[width=\linewidth]{../plots/flops_stencil3.pdf}
         \caption{Stencil3 Throughput}
-        \label{fig:flops_stencil}
+        \label{fig:flops-stencil}
     \end{subfigure}
     \hfill
     \begin{subfigure}[b]{0.48\textwidth}
         \centering
         \includegraphics[width=\linewidth]{../plots/speedup_stencil3.pdf}
         \caption{Stencil3 Speedup}
-        \label{fig:speedup_stencil}
+        \label{fig:speedup-stencil}
     \end{subfigure}
 
     \caption{Performance results versus working size for SAXPY, element-wise
     multiplication, and Stencil3. The left column shows raw throughput, while
     the right column shows the speedup as a multiple of scalar performance.}
-    \label{fig:performance_results}
+    \label{fig:performance-results}
 \end{figure}
 
 We will first examine SAXPY and Elem-mul, as their structure is similar (two
@@ -155,7 +155,6 @@ memory latency, so its throughput drops by a greater percentage than that of
 SAXPY's drop. Within this regime, throughput is limited by memory bandwidth and
 stays mostly constant.
 
-
 At $2^{17}$ elements, performance drops again to 30 and 10 GFLOPS respectively
 (Elem-mul begins dropping earlier around $n=2^{16}$, likely due to the greater
 memory usage as compared to SAXPY). The CPU must reach out to L3 (last-level)
@@ -179,29 +178,70 @@ read from and write to DRAM, which has significantly higher latency and lower
 bandwidth. The throughput becomes constant, and the speedup drops to 1x as DRAM
 becomes a bottleneck for both the vector and scalar implementations.
 
+For Stencil3, we see consistently higher throughput that does not drop off
+significantly until the working set size grows past the L3 cache size. As it
+only needs to access three consecutive values for each iteration (two of which
+are re-used from the previous iteration), it is likely not memory-bound but
+compute-bound, until it requires DRAM accesses past $2^{22}$ elements and
+becomes memory-bound.
+
 \section*{Alignment, Tail, Stride/Gather Studies}
 
 \begin{figure}[H]
     \makebox[\textwidth][c]{%
         \includegraphics[width=\linewidth]{../plots/alignment_saxpy.pdf}%
     }
-    \caption{SAXPY Throughput vs. Alignment}
+    \caption{SAXPY Throughput vs. Alignment. $n=2^{15}$ (L2 Cache)}
     \label{fig:alignment}
 \end{figure}
+
+Unaligned data yields mostly constant throughput for each vectorization
+configuration. For the scalar baseline, each element must be aligned to a
+4-byte boundary for optimal performance (16\% greater throughput). This result
+is expected, as each iteration reads one 4-byte value, so alignment is
+effectively modulo 4. When reads are not aligned to 4 bytes, 1 in 16 reads will
+be split across cache lines (4-byte reads, 64-byte cache lines). Reading 2
+cache lines is slower than reading 1 cache line, so 1 in 16 reads are slower,
+bringing down performance for unaligned reads.
+
+The default autovectorized kernel uses 128-bit (16-byte) SIMD vectors, and
+achieves 35\% greater throughput when the data it loads into vectors is aligned
+to 16 bytes. 1 in 4 reads will be split across cache lines when the data is not
+aligned. The widest autovectorized kernel uses 512-bit (64-byte) SIMD vectors,
+and achieves 45\% greater throughput when data is aligned to 64 bytes. All
+reads will be split across cache lines when unaligned.
+
+The wider the vector width, the more alignment matters, as unaligned data will
+result in reads split across cache lines more often.
 
 \begin{figure}[H]
     \makebox[\textwidth][c]{%
         \includegraphics[width=\linewidth]{../plots/tail_saxpy.pdf}%
     }
-    \caption{SAXPY Throughput vs. Tail Size}
+    \caption{SAXPY Throughput vs. Tail Size. $n=2^{15} +$ tail (L2 Cache)}
     \label{fig:tail}
 \end{figure}
+
+This data does not align with expectations. In the vectorized cases, we should
+expect to see cyclical performance results, where throughput increases with
+more trailing zeros in the binary representation of $n$ (because a tail
+divisible by a higher power of 2 can be parallelized more effectively than one
+divisible only by a lower power of 2).
+
+However, throughput remained unaffected by tail size for all tests ran. It is
+possible that the $2^{15}$ elements processed before the tail take long enough
+to make the tail time negligible, but using a smaller working set resulted in
+the tail throughput being too large compared to the body, such that the total
+size of the working set had too significant an effect on throughput (see Fig.
+\ref{fig:performance-results}) to notice any tail-dependent behavior.
+
+These results remained consistent across all kernels.
 
 \begin{figure}[H]
     \makebox[\textwidth][c]{%
         \includegraphics[width=\linewidth]{../plots/stride_saxpy.pdf}%
     }
-    \caption{SAXPY Bandwidth vs. Stride}
+    \caption{SAXPY Bandwidth vs. Stride.}
     \label{fig:stride}
 \end{figure}
 
