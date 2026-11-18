@@ -69,8 +69,9 @@ echo "Running stride tests..." >&3
 exec > data/stride.csv
 for n in 1 2 4 8 0
 do
-    taskset -c 0 ./build/bin/harness_scalar --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 23)) --stride $n
-    taskset -c 0 ./build/bin/harness_autovec_widest --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 23)) --stride $n
+    taskset -c 0 ./build/bin/harness_autovec_widest --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 21)) --stride $n
+    taskset -c 0 ./build/bin/harness_autovec_default --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 21)) --stride $n
+    taskset -c 0 ./build/bin/harness_scalar --kernel saxpy --dtype f32 --inner 10 --reps 10 --n $((2 ** 21)) --stride $n
 done
 
 # Data-type comparison. Explain results using lane count, arithmetic intensity,
