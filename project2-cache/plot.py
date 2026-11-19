@@ -78,7 +78,7 @@ def rw_mix():
     fig, ax = plt.subplots(1, 2, figsize=(10, 3.8))
 
     gbar(ax[0], d, "mix", "bw", order=o)
-    ax[0].axhline(PEAK, c="gray", ls="--")
+    # ax[0].axhline(PEAK, c="gray", ls="--")
     ax[0].set_ylabel("bandwidth (GB/s)")
     ax[0].set_title("Throughput (dashed: 102.4 GB/s DRAM peak)")
 
@@ -99,7 +99,7 @@ def intensity():
 
     ax.errorbar(bw, lat, xerr=g[("bw_mbps", "std")]/1e3, yerr=g[("lat_ns", "std")], fmt="o-", ms=3, capsize=2, label="loaded latency")
     ax.axvline(knee, c="r", ls=":", label=f"knee (lat = 1.5x idle): {knee:.0f} GB/s")
-    ax.axvline(PEAK, c="gray", ls="--", label="DRAM theoretical peak")
+    # ax.axvline(PEAK, c="gray", ls="--", label="DRAM theoretical peak")
 
     ax.set_xscale("log", base=2)
     ax.set_xlabel("throughput (GB/s)")
@@ -108,6 +108,7 @@ def intensity():
     ax2 = ax.twinx()
     ax2.plot(bw, bw*lat/64, "s--", c="g", ms=3, label="Little: BW x lat / 64 B")
     ax2.set_ylabel("outstanding lines (Little's Law)", color="g")
+    ax2.set_yscale("log", base=2)
 
     h = ax.get_legend_handles_labels()
     h2 = ax2.get_legend_handles_labels()
@@ -128,7 +129,7 @@ def working_set():
 
     ax.errorbar(a.index, a["mean"], yerr=a["std"], fmt="o-", ms=3, capsize=2, label="latency (MLC, random chase)")
 
-    ax.set_yscale("log")
+    ax.set_yscale("linear")
     ax.set_xscale("log", base=2)
     ax.set_xlabel("working set (KiB; kern = total of 3 arrays)")
     ax.set_ylabel("latency (ns)")
@@ -225,21 +226,22 @@ def pitfall():
     d = load("pitfall")
     a, b = d[d.pitfall == "cache_reuse"], d[d.pitfall == "pin_governor"]
 
-    fig, ax = plt.subplots(1, 2, figsize=(10, 3.8))
-    gbar(ax[0], a, "variant", "gbps", order=a.variant.unique())
-    ax[0].axhline(PEAK, c="gray", ls="--")
-    ax[0].set_yscale("log")
-    ax[0].set_ylabel("'read bandwidth' (GB/s, log)")
-    ax[0].set_title("Pitfall A: buffer size decides what MLC measures (dashed: DRAM peak)")
+    fig, ax = plt.subplots(1, 1, figsize=(5, 3.8))
+    gbar(ax, a, "variant", "gbps", order=a.variant.unique())
+    ax.axhline(PEAK, c="gray", ls="--", label=f"DRAM Peak = {PEAK} GiB/s")
+    ax.set_yscale("log")
+    ax.set_ylabel("read bandwidth (GB/s)")
+    handles, _ = ax.get_legend_handles_labels()
+    ax.legend(handles=handles[:1])
 
-    o = b.variant.unique()
-    gbar(ax[1], b, "variant", "ns_per_elem", order=o)
+    # o = b.variant.unique()
+    # gbar(ax[1], b, "variant", "ns_per_elem", order=o)
 
-    ax[1].set_ylabel("ns / element")
-    for i, v in enumerate(o):
-        ax[1].text(i, ax[1].get_ylim()[1]*.9, f"{b[b.variant == v].ghz.mean():.2f} GHz", ha="center", fontsize=8)
-
-    ax[1].set_title("Pitfall B: pinning / governor (cache-resident kernel)")
+    # ax[1].set_ylabel("ns / element")
+    # for i, v in enumerate(o):
+    #     ax[1].text(i, ax[1].get_ylim()[1]*.9, f"{b[b.variant == v].ghz.mean():.2f} GHz", ha="center", fontsize=8)
+    #
+    # ax[1].set_title("Pitfall B: pinning / governor (cache-resident kernel)")
     save(fig, "pitfall")
 
 if __name__ == "__main__":
