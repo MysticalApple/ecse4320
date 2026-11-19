@@ -1,0 +1,15 @@
+; Sustained sequential write (wraps around the file) with a 1 s bandwidth log.
+; Used to exhaust the SLC cache and show the post-cache write rate.
+[steady]
+filename=${TESTFILE}
+size=${FILE_SIZE_G}g
+ioengine=${IOENGINE}
+direct=1
+rw=write
+bs=1m
+iodepth=32
+time_based
+runtime=${STATE_SECS}
+buffer_compress_percentage=0
+write_bw_log=${LOGPREFIX}
+log_avg_msec=1000

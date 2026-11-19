@@ -1,0 +1,26 @@
+; Generic benchmark job. Every knob is an environment variable set by scripts/run.sh.
+; Effective queue depth = NUMJOBS x IODEPTH.
+[global]
+filename=${TESTFILE}
+size=${RANGE_G}g
+ioengine=${ENGINE}
+direct=${DIRECT}
+rw=${RW}
+rwmixread=${MIX}
+bs=${BS}
+iodepth=${IODEPTH}
+numjobs=${NUMJOBS}
+time_based
+runtime=${RT}
+ramp_time=${RAMP_T}
+; incompressible data (fio's default buffers are random and scrambled per IO, which is cheap)
+buffer_compress_percentage=0
+randrepeat=0
+norandommap
+; percentiles of total latency (submission + completion), needed for Little's Law
+lat_percentiles=1
+clat_percentiles=0
+percentile_list=1:5:10:25:50:75:90:95:99:99.5:99.9:99.95:99.99:99.999
+group_reporting
+
+[bench]

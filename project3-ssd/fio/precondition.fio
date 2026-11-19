@@ -1,0 +1,12 @@
+; One full sequential pass over the test file. Makes every extent real (a sparse or
+; fallocated file would read back zeros without touching NAND).
+[precondition]
+filename=${TESTFILE}
+size=${FILE_SIZE_G}g
+ioengine=${IOENGINE}
+direct=1
+rw=write
+bs=1m
+iodepth=32
+buffer_compress_percentage=0
+randrepeat=0
