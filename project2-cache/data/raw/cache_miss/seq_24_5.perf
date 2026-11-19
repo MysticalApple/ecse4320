@@ -1,0 +1,8 @@
+# started on Wed Nov 18 12:00:49 2026
+
+1008.61,msec,task-clock,1008608049,100.00,,
+5609303177,,cycles,1008608049,100.00,,
+2845301805,,instructions,1008608049,100.00,,
+1016858376,,l2_cache_req_stat.dc_access_in_l2,1008608049,100.00,,
+360327444,,ls_dmnd_fills_from_sys.dram_io_all,1008608049,100.00,,
+19745312,,ls_l1_d_tlb_miss.all_l2_miss,1008608049,100.00,,

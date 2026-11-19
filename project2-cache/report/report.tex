@@ -1,0 +1,124 @@
+\documentclass[12pt]{article}
+
+% ----------- PACKAGES -----------
+\usepackage[utf8]{inputenc}
+\usepackage{graphicx}
+\usepackage{amsmath}
+\usepackage{amssymb}
+\usepackage{float}
+\usepackage{hyperref}
+\usepackage{caption}
+\usepackage{booktabs}
+\usepackage{tikz}
+\usepackage{enumitem}
+\usepackage{titlesec}
+\usepackage{svg}
+% \usepackage{cite}
+\usepackage[margin=1in]{geometry}
+\usepackage{siunitx}
+\usepackage{pgfplots}
+\usepackage{pdfpages}
+\usepackage{subcaption}
+
+% ----------- FORMATTING -----------
+\setlength{\parskip}{0.5em}
+\setlength{\parindent}{0pt}
+\captionsetup{font=small}
+\renewcommand{\figurename}{Figure}
+\renewcommand{\tablename}{Table}
+
+
+% ----------- TITLE -----------
+\title{ECSE-4320 Project 2 \\ \large Cache \& Memory Performance Profiling}
+\author{Timon Cappella-Pimor}
+\date{\today}
+
+% ==================================
+\begin{document}
+% \pagenumbering{gobble}
+\maketitle
+\newpage
+\section*{Methodology}
+
+Linux Kernel Version: 7.2.11-zen1-1-zen \\
+CPU: AMD Ryzen 7 9700X (benchmarks pinned to core 0) \\
+Caches: L1d 48KB, L2 1024KB, L3 32MB \\
+Max Clock Speed: 5.58 GHz \\
+Governor: Performance
+
+\newpage
+\section*{Zero-queue Baselines}
+
+\begin{figure}[H]
+    \makebox[\textwidth][c]{%
+        \includegraphics[width=\linewidth]{../plots/zero_queue.pdf}%
+    }
+    \caption{Zero-queue Baselines}
+    \label{fig:zero-queue}
+\end{figure}
+
+\newpage
+\section*{Pattern/Granularity/RW Sweeps}
+
+\begin{figure}[H]
+    \makebox[\textwidth][c]{%
+        \includegraphics[width=\linewidth]{../plots/pattern_gran.pdf}%
+    }
+    \caption{}
+    \label{fig:pattern-gran}
+\end{figure}
+
+\newpage
+\section*{Throughput-latency Knee}
+
+\begin{figure}[H]
+    \makebox[\textwidth][c]{%
+        \includegraphics[width=\linewidth]{../plots/intensity.pdf}%
+    }
+    \caption{Throughput vs. Latency.}
+    \label{fig:intensity}
+\end{figure}
+
+
+\newpage
+\section*{Working-set/Cache/TLB Analysis}
+
+\begin{figure}[H]
+    \makebox[\textwidth][c]{%
+        \includegraphics[width=\linewidth]{../plots/working_set.pdf}%
+    }
+    \caption{}
+    \label{fig:working-set}
+\end{figure}
+
+\begin{figure}[H]
+    \makebox[\textwidth][c]{%
+        \includegraphics[width=\linewidth]{../plots/cache_miss.pdf}%
+    }
+    \caption{}
+    \label{fig:cache-miss}
+\end{figure}
+
+\begin{figure}[H]
+    \makebox[\textwidth][c]{%
+        \includegraphics[width=\linewidth]{../plots/tlb.pdf}%
+    }
+    \caption{}
+    \label{fig:tlb-miss}
+\end{figure}
+
+\newpage
+\section*{AI-use Transparency and Pitfall Analysis}
+
+Claude Sonnet 5.5 was used to write an initial pass of the benchmark code, as
+well as a few short snippets of Python code for some of the plots. I designed
+all experiments and plots without AI assistance. All words in this report are
+entirely my own.
+
+
+% ---- References ----
+% \newpage
+% \bibliographystyle{IEEEtran}
+% \bibliography{references}
+
+\end{document}
